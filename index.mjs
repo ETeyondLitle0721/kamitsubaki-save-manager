@@ -11,6 +11,11 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PS_SCRIPT = path.join(__dirname, 'registry-ops.ps1');
 const BACKUP_DIR = path.join(__dirname, 'backups');
 
+// ⬇️ 在这里统一定义注册表路径，传递给 PowerShell
+const REGISTRY_PATH = 'HKCU:\\Software\\株式会社THINKR\\Kamitsubaki City Under Construction REGENERATE';
+const NATIVE_PATH = 'HKEY_CURRENT_USER\\Software\\株式会社THINKR\\Kamitsubaki City Under Construction REGENERATE';
+// ⬆️ ----------------------------------------
+
 // ---------- PowerShell 调用封装 ----------
 function runPwsh(action, extraArgs = {}) {
     return new Promise((resolve) => {
@@ -20,6 +25,8 @@ function runPwsh(action, extraArgs = {}) {
             '-ExecutionPolicy', 'Bypass',
             '-File', PS_SCRIPT,
             '-Action', action,
+            '-RegistryPath', REGISTRY_PATH, // 传入路径
+            '-NativePath', NATIVE_PATH,     // 传入原生路径
         ];
         if (extraArgs.BackupDir) args.push('-BackupDir', extraArgs.BackupDir);
         if (extraArgs.BackupPath) args.push('-BackupPath', extraArgs.BackupPath);
@@ -37,10 +44,9 @@ function runPwsh(action, extraArgs = {}) {
 
         child.on('close', (code) => {
             if (code !== 0) {
-                resolve({ ok: false, error: `pwsh 退出码 ${code}：${stderr.trim()}` });
+                resolve({ ok: false, error: `pwsh 退出码 ${code}：${stderr.trim() || stdout.trim()}` });
                 return;
             }
-            // 取最后一行非空内容解析 JSON，避免 pwsh 额外输出干扰
             const lines = stdout.trim().split(/\r?\n/).filter(Boolean);
             for (let i = lines.length - 1; i >= 0; i--) {
                 try {

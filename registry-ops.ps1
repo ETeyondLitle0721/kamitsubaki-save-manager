@@ -5,6 +5,12 @@ param(
     [ValidateSet('Check','Backup','Restore','Clear','ListBackups')]
     [string]$Action,
 
+    [Parameter(Mandatory=$true)]
+    [string]$RegistryPath,
+
+    [Parameter(Mandatory=$true)]
+    [string]$NativePath,
+
     [Parameter(Mandatory=$false)]
     [string]$BackupPath = "",
 
@@ -13,8 +19,10 @@ param(
 )
 
 $ErrorActionPreference = 'Stop'
-$RegistryPath = 'HKCU:\Software\株式会社THINKR\Kamitsubaki City Under Construction REGENERATE'
-$NativePath   = 'HKEY_CURRENT_USER\Software\株式会社THINKR\Kamitsubaki City Under Construction REGENERATE'
+
+# 强制输出编码为 UTF-8，防止 Node.js 收到乱码
+[Console]::OutputEncoding = [System.Text.Encoding]::UTF8
+$OutputEncoding = [System.Text.Encoding]::UTF8
 
 function Output-Json($obj) {
     $obj | ConvertTo-Json -Compress -Depth 4
@@ -28,8 +36,8 @@ switch ($Action) {
 
     'Check' {
         Output-Json @{
-            ok         = $true
-            exists     = Get-Existing
+            ok           = $true
+            exists       = Get-Existing
             registryPath = $NativePath
         }
     }
@@ -54,7 +62,7 @@ switch ($Action) {
 
     'Backup' {
         if (-not (Get-Existing)) {
-            Output-Json @{ ok = $false; error = '注册表路径不存在，无法备份' }
+            Output-Json @{ ok = $false; error = '注册表路径不存在，无法备份（请先在游戏中保存一次）' }
             break
         }
         if (-not (Test-Path -LiteralPath $BackupDir)) {
@@ -64,7 +72,6 @@ switch ($Action) {
         $fileName  = "KamitsubakiSave_$timestamp.reg"
         $fullPath  = Join-Path $BackupDir $fileName
 
-        # reg export 原生支持中文路径，加 /y 静默覆盖
         & reg.exe export $NativePath $fullPath /y | Out-Null
         if ($LASTEXITCODE -ne 0) {
             Output-Json @{ ok = $false; error = "reg export 失败，退出码 $LASTEXITCODE" }
@@ -83,7 +90,6 @@ switch ($Action) {
             Output-Json @{ ok = $false; error = "备份文件不存在：$BackupPath" }
             break
         }
-        # reg import 是合并写入，先清空再恢复可避免旧值残留
         if (Get-Existing) {
             Remove-Item -LiteralPath $RegistryPath -Recurse -Force
         }
