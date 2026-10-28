@@ -62,21 +62,20 @@ function Invoke-Backup {
     $fileName  = "KamitsubakiSave_$timestamp.reg"
     $fullPath  = Join-Path $BackupDir $fileName
 
-    $out = & reg.exe export $NativePath $fullPath /y 2>&1
-    if ($LASTEXITCODE -ne 0) {
-        throw "reg export 失败（退出码 $LASTEXITCODE）：$($out -join ' ')"
+    # 用 cmd /c 包装，防止 PowerShell 的 ErrorActionPreference 拦截 stderr
+    $out = & cmd.exe /c "reg.exe export `"$NativePath`" `"$fullPath`" /y 2>&1"
+    $exitCode = $LASTEXITCODE
+
+    # 只要文件生成了，并且大小大于 0，就说明备份成功
+    if (-not (Test-Path -LiteralPath $fullPath) -or (Get-Item -LiteralPath $fullPath).Length -eq 0) {
+        throw "reg export 失败（退出码 $exitCode）：`n$($out -join "`n")"
     }
+    
     return [pscustomobject]@{
         File     = $fileName
         FullPath = $fullPath
         Time     = (Get-Item -LiteralPath $fullPath).LastWriteTime.ToString('yyyy-MM-dd HH:mm:ss')
     }
-}
-
-function Get-BackupItems {
-    if (-not (Test-Path -LiteralPath $BackupDir)) { return @() }
-    return @(Get-ChildItem -LiteralPath $BackupDir -Filter '*.reg' -File |
-             Sort-Object LastWriteTime -Descending)
 }
 
 function Invoke-Restore {
@@ -87,10 +86,21 @@ function Invoke-Restore {
     if (Test-SaveExists) {
         Remove-Item -LiteralPath $RegistryPath -Recurse -Force
     }
-    $out = & reg.exe import $BackupPath 2>&1
-    if ($LASTEXITCODE -ne 0) {
-        throw "reg import 失败（退出码 $LASTEXITCODE）：$($out -join ' ')"
+
+    # 同样用 cmd /c 包装
+    $out = & cmd.exe /c "reg.exe import `"$BackupPath`" 2>&1"
+    $exitCode = $LASTEXITCODE
+
+    # reg.exe 的退出码不可靠，只要导入后注册表路径真实存在，就说明成功
+    if (-not (Test-Path -LiteralPath $RegistryPath)) {
+        throw "reg import 失败（退出码 $exitCode）：`n$($out -join "`n")"
     }
+}
+
+function Get-BackupItems {
+    if (-not (Test-Path -LiteralPath $BackupDir)) { return @() }
+    return @(Get-ChildItem -LiteralPath $BackupDir -Filter '*.reg' -File |
+             Sort-Object LastWriteTime -Descending)
 }
 
 function Invoke-Clear {
