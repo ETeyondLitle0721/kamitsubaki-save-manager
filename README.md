@@ -1,15 +1,30 @@
 # Kamitsubaki City Under Construction REGENERATE 存档管理工具
 
-一个基于 **Node.js + PowerShell 7** 的 Windows 命令行存档管理工具，用于管理游戏
-《Kamitsubaki City Under Construction REGENERATE》（神椿市建設中。REGENERATE）在注册表中保存的存档数据。
+一个用于管理游戏《Kamitsubaki City Under Construction REGENERATE》（神椿市建設中。REGENERATE）在注册表中保存的存档数据的 Windows 命令行工具。
 
 > **⚠️ 声明：本项目的全部代码（Node.js 主程序、PowerShell 脚本、批处理启动器及本文档）均由 DeepSeek 编写生成。**
 > 使用前请务必阅读 [免责声明](#免责声明) 一节。
 
 ---
 
+## 🌟 推荐方案：纯 PowerShell 精简版
+
+本工具提供两种实现方案。**强烈推荐使用“精简版”方案**：
+
+👉 **【强烈推荐】`精简版.cmd`**（纯 PowerShell 5.1 单文件实现）
+- **零依赖，开箱即用**：无需安装 Node.js，无需安装 PowerShell 7。
+- **系统原生支持**：仅依赖 Windows 10/11 自带的 Windows PowerShell 5.1 和 `reg.exe`。
+- **单文件架构**：不需要检查多个程序文件，双击即用，启动极快。
+
+👉 **【备选方案】Node.js + PowerShell 7 架构**
+- 也就是您当前看到的这份文档原本描述的多文件架构。
+- 适合已经安装了相关环境，或希望进行二次开发（前后端分离）的用户。
+
+---
+
 ## 目录
 
+- [推荐方案：纯 PowerShell 精简版](#-推荐方案纯-powershell-精简版)
 - [功能特性](#功能特性)
 - [工作原理](#工作原理)
 - [环境要求](#环境要求)
@@ -30,7 +45,6 @@
 - 🗑️ **清空当前存档**：一键删除整个存档注册表项
 - 🔍 **检查注册表状态**：查看当前存档是否存在
 - 🖥️ **友好的中文交互菜单**：进入 CLI 后按数字选择操作，无需记命令
-- ✅ **启动前环境自检**：双击 `.bat` 自动检查 Node.js、PowerShell 7、程序文件和备份目录
 
 管理的目标注册表路径：
 
@@ -42,6 +56,10 @@ HKEY_CURRENT_USER\Software\株式会社THINKR\Kamitsubaki City Under Constructio
 
 ## 工作原理
 
+**（精简版）**
+直接在 `精简版.cmd` 中调用 PowerShell 5.1 运行内嵌的逻辑，利用 Registry Provider 和 `reg.exe` 完成所有操作，无跨进程通信开销。
+
+**（Node.js 原版）**
 ```
 ┌──────────────────────────────────────┐
 │  Node.js (index.mjs)                 │
@@ -57,27 +75,36 @@ HKEY_CURRENT_USER\Software\株式会社THINKR\Kamitsubaki City Under Constructio
 └──────────────────────────────────────┘
 ```
 
-- **Node.js** 负责所有交互逻辑、菜单渲染、备份列表管理和结果展示。
-- **PowerShell 7** 负责所有注册表操作，脚本以 JSON 格式向 Node.js 返回结果。
-- 两者通过 `spawn` + 标准输入输出通信，职责分离，便于维护。
-
 ---
 
 ## 环境要求
 
+### 🟢 精简版（强烈推荐）
+| 依赖 | 版本要求 | 说明 |
+|---|---|---|
+| **操作系统** | Windows 10 / 11 | Win10/11 自带所需环境，**无需安装任何额外软件** |
+| **PowerShell 5.1** | 系统自带 | 确保 `powershell.exe` 可用（系统默认自带） |
+
+### 🟡 Node.js 原版
 | 依赖 | 版本要求 | 下载地址 |
 |---|---|---|
 | **操作系统** | Windows 10 / 11 | — |
 | **Node.js** | 18 或更高 | https://nodejs.org/ |
 | **PowerShell 7** | 任意 7.x 版本（需 `pwsh.exe` 在 PATH 中） | https://github.com/PowerShell/PowerShell/releases |
 
-> 注意：是 **PowerShell 7**（命令为 `pwsh`），不是 Windows 自带的 Windows PowerShell 5.1（命令为 `powershell`）。
-> 启动器会检查 `pwsh.exe` 是否可用，缺失会给出提示。
-
 ---
 
 ## 文件结构
 
+### 🟢 精简版
+```
+项目根目录/
+├── 精简版.cmd            # 纯 PowerShell 5.1 启动器及主程序（推荐）
+└── backups/              # 备份目录（首次运行自动创建）
+    └── KamitsubakiSave_20250101_120000.reg
+```
+
+### 🟡 Node.js 原版
 ```
 项目根目录/
 ├── 双击运行.bat          # 启动器：环境检查 + 拉起主程序
@@ -86,103 +113,64 @@ HKEY_CURRENT_USER\Software\株式会社THINKR\Kamitsubaki City Under Constructio
 ├── package.json          # 项目元信息
 ├── README.md             # 本文档
 └── backups/              # 备份目录（首次运行自动创建）
-    └── KamitsubakiSave_20250101_120000.reg
 ```
 
 ---
 
 ## 快速开始
 
-1. **安装依赖**
-   - 安装 [Node.js](https://nodejs.org/)（18+）
-   - 安装 [PowerShell 7](https://github.com/PowerShell/PowerShell/releases)（确保 `pwsh` 命令可用）
+### 🟢 方式一：使用精简版（强烈推荐）
+1. 下载本项目中的 **`精简版.cmd`**。
+2. 双击运行即可，无需安装任何额外环境。
 
+### 🟡 方式二：使用 Node.js 原版
+1. **安装依赖**：安装 [Node.js](https://nodejs.org/)（18+）和 [PowerShell 7](https://github.com/PowerShell/PowerShell/releases)。
 2. **下载本项目**，将所有文件放在同一个文件夹内。
+3. **双击 `双击运行.bat`**，启动器会自动检查环境并拉起主程序。
 
-3. **双击 `双击运行.bat`**。
+无论哪种方式，启动成功后，你会看到如下菜单：
+```
+══════════════════════════════════════════
+  Kamitsubaki City Under Construction
+  REGENERATE 存档管理工具
+══════════════════════════════════════════
 
-   启动器会自动检查环境，全部通过后拉起主程序，你会看到如下菜单：
+  1. 备份当前存档
+  2. 从备份恢复
+  3. 清空当前存档
+  4. 检查注册表状态
+  0. 退出
 
-   ```
-   ══════════════════════════════════════════
-     Kamitsubaki City Under Construction
-     REGENERATE 存档管理工具
-   ══════════════════════════════════════════
-
-     1. 备份当前存档
-     2. 从备份恢复
-     3. 清空当前存档
-     4. 检查注册表状态
-     0. 退出
-
-   请输入选项：
-   ```
-
-4. 按提示输入数字选择操作即可。
+请输入选项：
+```
 
 ---
 
 ## 详细使用说明
 
-### 方式一：双击启动（推荐）
-
-双击 **`双击运行.bat`**，启动器会依次检查：
-
-1. Node.js 是否存在且版本 ≥ 18
-2. PowerShell 7（`pwsh.exe`）是否可用
-3. 程序文件（`index.mjs`、`registry-ops.ps1`、`package.json`）是否齐全
-4. `backups/` 目录是否存在（不存在会自动创建）
-
-全部通过后自动运行主程序。若检查失败，窗口会停住并提示具体缺少什么，修复后重新双击即可。
-
-### 方式二：命令行启动
-
-在项目目录下打开终端，执行：
-
-```bash
-npm start
-```
-
-或直接：
-
-```bash
-node index.mjs
-```
-
-> 此方式跳过环境检查，请确保前面列出的依赖都已安装。
-
 ### 各菜单功能说明
 
 #### 1. 备份当前存档
-
-将当前注册表中的存档数据导出为 `.reg` 文件，存入 `backups/` 目录，文件名格式为
-`KamitsubakiSave_年月日_时分秒.reg`。
-
+将当前注册表中的存档数据导出为 `.reg` 文件，存入 `backups/` 目录，文件名格式为 `KamitsubakiSave_年月日_时分秒.reg`。
 - 如果当前没有存档（注册表项不存在），会提示无法备份。
 - 备份文件名带时间戳，不会覆盖历史备份。
 
 #### 2. 从备份恢复
-
 列出 `backups/` 下所有 `.reg` 备份（按时间倒序），输入编号选择要恢复的备份。
-
 - 选择后会二次确认（输入 `yes`）。
 - **恢复前会先清空当前存档，再导入备份**，确保恢复到备份时的完整状态，不会残留旧数据。
 - 如果不想恢复，直接回车即可取消。
 
 #### 3. 清空当前存档
-
 删除整个存档注册表项及其所有子项。
-
 - 会先检查当前是否有存档，没有则提示已是空状态。
 - 会要求二次确认（输入 `yes`）。
 - ⚠️ **建议清空前先执行「1. 备份当前存档」**，以免误操作后无法找回。
 
 #### 4. 检查注册表状态
-
 显示目标注册表路径，以及当前是否存在存档数据。
 
 #### 0. 退出
-
 退出程序。
 
 ---
@@ -199,14 +187,17 @@ node index.mjs
 
 ## 常见问题
 
-**Q：双击 bat 后窗口一闪而过？**  
-A：正常情况下窗口会在结束时 `pause` 停住。若一闪而过，通常是因为 bat 文件编码不正确导致命令解析失败。请将 `双击运行.bat` 保存为 **UTF-8 with BOM** 编码（详见下方编码说明）。
+**Q：为什么推荐使用精简版？**
+A：精简版使用 Windows 自带的 PowerShell 5.1 编写，无需安装 Node.js 和 PowerShell 7 等几百 MB 的依赖，双击即用。且采用单文件结构，不易出现路径错误或文件丢失的问题。
 
-**Q：提示找不到 pwsh.exe？**  
-A：说明未安装 PowerShell 7，或安装后未将其加入 PATH。请从 [官方发布页](https://github.com/PowerShell/PowerShell/releases) 安装，安装时勾选“添加到 PATH”，或手动将 `pwsh.exe` 所在目录加入系统环境变量 PATH。
+**Q：双击 bat / cmd 后窗口一闪而过？**  
+A：正常情况下窗口会在结束时 `pause` 停住。若一闪而过，通常是因为文件编码不正确导致命令解析失败。请将 `.cmd` / `.bat` 文件保存为 **UTF-8 with BOM** 编码（详见下方编码说明）。
 
-**Q：提示 Node.js 版本过低？**  
-A：本工具需要 Node.js 18 或更高版本，请升级 Node.js。
+**Q：精简版需要安装 Node.js 吗？**
+A：完全不需要。精简版仅依赖系统自带的 PowerShell 5.1。
+
+**Q：Node.js 原版提示找不到 pwsh.exe？**  
+A：说明未安装 PowerShell 7，或安装后未将其加入 PATH。请从 [官方发布页](https://github.com/PowerShell/PowerShell/releases) 安装，安装时勾选“添加到 PATH”。
 
 **Q：恢复后存档不对 / 有残留？**  
 A：本工具恢复时会先清空当前存档再导入，正常情况下不会有残留。如果仍然异常，请确认你选择的备份文件是否正确，或尝试用「3. 清空当前存档」后再重新恢复。
@@ -214,8 +205,8 @@ A：本工具恢复时会先清空当前存档再导入，正常情况下不会�
 **Q：清空后还能找回吗？**  
 A：不能。清空是直接删除注册表项，**不可逆**。请务必在清空前先备份。本工具不对数据丢失负责。
 
-**Q：bat 文件中文乱码？**  
-A：`双击运行.bat` 中使用了 `chcp 65001`（UTF-8 代码页），因此 bat 文件本身也必须以 **UTF-8 with BOM** 保存。若用记事本保存，请选择“UTF-8 带 BOM”；若用 VS Code，请通过“Save with Encoding”选择“UTF-8 with BOM”。
+**Q：文件中文乱码？**  
+A：请确保 `.cmd` / `.bat` 中使用了 `chcp 65001`（UTF-8 代码页），且文件本身必须以 **UTF-8 with BOM** 保存。对于 PowerShell 脚本（`.ps1`），也必须保存为 **UTF-8 with BOM** 以防中文路径乱码。
 
 ---
 
